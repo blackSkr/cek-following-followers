@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cek Followers dan Following IG</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .file-input-label {
+            transition: all 0.3s;
+        }
+        .file-input-label:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        .file-input-label.drag-over {
+            border-color: #6366f1;
+            background-color: rgba(99, 102, 241, 0.1);
+        }
+        .result-card {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            transition: all 0.3s;
+        }
+        .result-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .progress-bar {
+            height: 4px;
+            background-color: #e2e8f0;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        .progress-value {
+            height: 100%;
+            background-color: #6366f1;
+            transition: width 0.3s;
+        }
+        @media (max-width: 640px) {
+            .file-cards-container {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <header class="text-center mb-10">
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-800 mb-2">Pams check</h1>
+            <p class="text-gray-600 max-w-2xl mx-auto">
+                upload data .json dari following & followers mu
+            </p>
+        </header>
+
+        <!-- Main Content -->
+        <main class="max-w-6xl mx-auto">
+            <!-- File Upload Section -->
+            <div class="bg-white rounded-xl shadow-md p-6 mb-10">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">Upload data</h2>
+                <p class="text-gray-600 mb-6">
+                    Ekspor data .json mu : 
+                </p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 file-cards-container">
+                    <!-- Followers File Upload -->
+                    <div class="space-y-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Data Followers</label>
+                        <input type="file" id="followersFile" accept=".json" class="hidden">
+                        <label for="followersFile" id="followersLabel" class="file-input-label block border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-indigo-400">
+                            <div class="flex flex-col items-center">
+                                <i class="fas fa-users text-indigo-500 text-4xl mb-3"></i>
+                                <span class="font-medium text-gray-700">Pilih <span class="text-indigo-600">followers.json</span></span>
+                                <span class="text-sm text-gray-500 mt-1">atau drag dan drop disini</span>
+                            </div>
+                        </label>
+                        <div id="followersFileName" class="text-sm text-gray-500 mt-2"></div>
+                    </div>
+                    
+                    <!-- Following File Upload -->
+                    <div class="space-y-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Data Following</label>
+                        <input type="file" id="followingFile" accept=".json" class="hidden">
+                        <label for="followingFile" id="followingLabel" class="file-input-label block border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-indigo-400">
+                            <div class="flex flex-col items-center">
+                                <i class="fas fa-user-plus text-indigo-500 text-4xl mb-3"></i>
+                                <span class="font-medium text-gray-700">Pilih  <span class="text-indigo-600">following.json</span></span>
+                                <span class="text-sm text-gray-500 mt-1">atau drag dan drop disini</span>
+                            </div>
+                        </label>
+                        <div id="followingFileName" class="text-sm text-gray-500 mt-2"></div>
+                    </div>
+                </div>
+
+                <div class="flex justify-center">
+                    <button id="analyzeBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-6 rounded-lg flex items-center disabled:opacity-50 disabled:cursor-not-allowed">
+                        <i class="fas fa-chart-pie mr-2"></i>
+                        Cek
+                    </button>
+                </div>
+
+                <!-- Processing Indicator -->
+                <div id="processingIndicator" class="mt-6 hidden">
+                    <div class="text-center">
+                        <div class="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-600 mb-3"></div>
+                        <p class="text-gray-600">Sedang Proses...</p>
+                        <div class="progress-bar mt-3 w-full">
+                            <div id="progressValue" class="progress-value w-0"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Section -->
+            <div id="resultsSection" class="hidden">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">Analisa Hasil</h2>
+                
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div class="result-card bg-white rounded-lg p-5">
+                        <div class="flex items-center">
+                            <div class="p-3 rounded-full bg-indigo-100 text-indigo-600 mr-4">
+                                <i class="fas fa-users text-xl"></i>
+                            </div>
+                            <div>
+                                <p class="text-gray-500 text-sm">Followers</p>
+                                <h3 id="followerCount" class="text-2xl font-bold text-gray-800">0</h3>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="result-card bg-white rounded-lg p-5">
+                        <div class="flex items-center">
+                            <div class="p-3 rounded-full bg-indigo-100 text-indigo-600 mr-4">
+                                <i class="fas fa-user-plus text-xl"></i>
+                            </div>
+                            <div>
+                                <p class="text-gray-500 text-sm">Following</p>
+                                <h3 id="followingCount" class="text-2xl font-bold text-gray-800">0</h3>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="result-card bg-white rounded-lg p-5">
+                        <div class="flex items-center">
+                            <div class="p-3 rounded-full bg-indigo-100 text-indigo-600 mr-4">
+                                <i class="fas fa-exchange-alt text-xl"></i>
+                            </div>
+                            <div>
+                                <p class="text-gray-500 text-sm">Don't Follow Back</p>
+                                <h3 id="nonFollowersCount" class="text-2xl font-bold text-gray-800">0</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Non-Followers List -->
+                <div class="bg-white rounded-xl shadow-md p-6 mb-6">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Akun yg tidak mengikuti mu</h3>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Username</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Full Name</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Profile</th>
+                                </tr>
+                            </thead>
+                            <tbody id="nonFollowersList" class="bg-white divide-y divide-gray-200">
+                                <!-- Will be populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="noNonFollowers" class="text-center py-8 hidden">
+                        <i class="fas fa-check-circle text-green-500 text-5xl mb-4"></i>
+                        <h4 class="text-lg font-medium text-gray-800 mb-2">Semuanya saling follow kok!</h4>
+                        <p class="text-gray-500">tidak ada daftar akun gelap</p>
+                    </div>
+                </div>
+                
+                <!-- Download Results -->
+                <div class="text-center mb-10">
+                    <button id="downloadBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-6 rounded-lg inline-flex items-center">
+                        <i class="fas fa-download mr-2"></i>
+                        download jadi .csv
+                    </button>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="text-center text-gray-500 text-sm mt-10">
+            <p>Data kamu 100% aman kok, santai !</p>
+            <p class="mt-1">© Pams</p>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const followersInput = document.getElementById('followersFile');
+            const followingInput = document.getElementById('followingFile');
+            const followersLabel = document.getElementById('followersLabel');
+            const followingLabel = document.getElementById('followingLabel');
+            const followersFileName = document.getElementById('followersFileName');
+            const followingFileName = document.getElementById('followingFileName');
+            const analyzeBtn = document.getElementById('analyzeBtn');
+            const processingIndicator = document.getElementById('processingIndicator');
+            const progressValue = document.getElementById('progressValue');
+            const resultsSection = document.getElementById('resultsSection');
+            const followerCount = document.getElementById('followerCount');
+            const followingCount = document.getElementById('followingCount');
+            const nonFollowersCount = document.getElementById('nonFollowersCount');
+            const nonFollowersList = document.getElementById('nonFollowersList');
+            const noNonFollowers = document.getElementById('noNonFollowers');
+            const downloadBtn = document.getElementById('downloadBtn');
+            
+            let followersData = null;
+            let followingData = null;
+            let nonFollowers = [];
+            
+            // Drag & Drop setup
+            setupDragDrop(followersLabel, followersInput, followersFileName, 'followers');
+            setupDragDrop(followingLabel, followingInput, followingFileName, 'following');
+            
+            // File input change event
+            followersInput.addEventListener('change', function() {
+                handleFileSelect(this, followersFileName, 'followers');
+            });
+            followingInput.addEventListener('change', function() {
+                handleFileSelect(this, followingFileName, 'following');
+            });
+
+            analyzeBtn.addEventListener('click', analyzeData);
+            downloadBtn.addEventListener('click', downloadResults);
+
+            // ===== FUNCTION DEF =====
+            function setupDragDrop(label, input, fileNameDisplay, type) {
+                label.addEventListener('dragover', function(e) {
+                    e.preventDefault();
+                    this.classList.add('drag-over');
+                });
+                label.addEventListener('dragleave', function() {
+                    this.classList.remove('drag-over');
+                });
+                label.addEventListener('drop', function(e) {
+                    e.preventDefault();
+                    this.classList.remove('drag-over');
+                    if (e.dataTransfer.files.length) {
+                        input.files = e.dataTransfer.files;
+                        handleFileSelect(input, fileNameDisplay, type);
+                    }
+                });
+            }
+
+            function handleFileSelect(input, fileNameDisplay, type) {
+                if (input.files && input.files.length > 0) {
+                    const file = input.files[0];
+                    fileNameDisplay.textContent = `Selected: ${file.name}`;
+                    // Reset previous data if any
+                    if (type === 'followers') followersData = null;
+                    if (type === 'following') followingData = null;
+
+                    // Read file
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        try {
+                            const data = JSON.parse(e.target.result);
+                            if (type === 'followers') {
+                                followersData = parseInstagramData(data, 'followers');
+                            } else {
+                                followingData = parseInstagramData(data, 'following');
+                            }
+                        } catch (error) {
+                            fileNameDisplay.textContent = 'Invalid JSON file!';
+                            if (type === 'followers') followersData = null;
+                            if (type === 'following') followingData = null;
+                        }
+                        updateAnalyzeButton();
+                    };
+                    reader.readAsText(file);
+                } else {
+                    fileNameDisplay.textContent = '';
+                    if (type === 'followers') followersData = null;
+                    if (type === 'following') followingData = null;
+                    updateAnalyzeButton();
+                }
+            }
+
+            // Re-usable, adaptive parsing
+            function parseInstagramData(data, type) {
+                // Instagram export comes in several shapes
+                let users = [];
+                if (!data) return users;
+
+                if (Array.isArray(data)) {
+                    // Sometimes direct array
+                    users = data.map(item => ({
+                        username: item.value || item.username || item?.string_list_data?.[0]?.value || '',
+                        full_name: item.full_name || item.name || '',
+                        profile_url: `https://instagram.com/${item.value || item.username || item?.string_list_data?.[0]?.value || ''}`
+                    }));
+                } else if (data.string_list_data) {
+                    users = data.string_list_data.map(item => ({
+                        username: item.value || '',
+                        full_name: '',
+                        profile_url: `https://instagram.com/${item.value || ''}`
+                    }));
+                } else if (data.relationships_followers || data.relationships_following) {
+                    const key = type === 'followers' ? 'relationships_followers' : 'relationships_following';
+                    users = (data[key] || []).map(item => ({
+                        username: item.value || item?.string_list_data?.[0]?.value || '',
+                        full_name: '',
+                        profile_url: `https://instagram.com/${item.value || item?.string_list_data?.[0]?.value || ''}`
+                    }));
+                } else if (Array.isArray(data.users)) {
+                    users = data.users.map(item => ({
+                        username: item.username || item.value || '',
+                        full_name: item.full_name || '',
+                        profile_url: `https://instagram.com/${item.username || item.value || ''}`
+                    }));
+                }
+                // Remove empty
+                return users.filter(u => u.username);
+            }
+
+            function updateAnalyzeButton() {
+                analyzeBtn.disabled = !(followersData && followersData.length && followingData && followingData.length);
+            }
+
+            function analyzeData() {
+                if (!followersData || !followingData) {
+                    alert('Please upload both files first.');
+                    return;
+                }
+                processingIndicator.classList.remove('hidden');
+                resultsSection.classList.add('hidden');
+                simulateProgress();
+
+                setTimeout(() => {
+                    const followers = new Set(followersData.map(u => u.username?.toLowerCase().trim()));
+                    const following = new Set(followingData.map(u => u.username?.toLowerCase().trim()));
+                    nonFollowers = followingData.filter(u => !followers.has(u.username?.toLowerCase().trim()));
+                    updateResultsUI(followersData.length, followingData.length, nonFollowers.length);
+                    processingIndicator.classList.add('hidden');
+                    progressValue.style.width = '0%';
+                }, 1400);
+            }
+
+            function simulateProgress() {
+                let width = 0;
+                const interval = setInterval(() => {
+                    if (width >= 100) {
+                        clearInterval(interval);
+                    } else {
+                        width += 12;
+                        progressValue.style.width = width + '%';
+                    }
+                }, 130);
+            }
+
+            function updateResultsUI(followersNum, followingNum, nonFollowersNum) {
+                followerCount.textContent = followersNum.toLocaleString();
+                followingCount.textContent = followingNum.toLocaleString();
+                nonFollowersCount.textContent = nonFollowersNum.toLocaleString();
+                nonFollowersList.innerHTML = '';
+
+                if (nonFollowersNum > 0) {
+                    noNonFollowers.classList.add('hidden');
+                    nonFollowers.forEach(user => {
+                        const row = document.createElement('tr');
+                        row.className = 'hover:bg-gray-50';
+                        row.innerHTML = `
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                ${user.username || 'N/A'}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                ${user.full_name || 'N/A'}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <a href="${user.profile_url || '#'}" target="_blank" class="text-indigo-600 hover:text-indigo-800">
+                                    View Profile <i class="fas fa-external-link-alt ml-1"></i>
+                                </a>
+                            </td>
+                        `;
+                        nonFollowersList.appendChild(row);
+                    });
+                } else {
+                    noNonFollowers.classList.remove('hidden');
+                }
+                resultsSection.classList.remove('hidden');
+            }
+
+            function downloadResults() {
+                if (nonFollowers.length === 0) {
+                    alert('No results to download.');
+                    return;
+                }
+                const csvContent = [
+                    ['Username', 'Full Name', 'Profile URL'],
+                    ...nonFollowers.map(user => [
+                        user.username || '',
+                        user.full_name || '',
+                        user.profile_url || ''
+                    ])
+                ].map(e => e.join(',')).join('\n');
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.setAttribute('href', url);
+                link.setAttribute('download', 'instagram_non_followers.csv');
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        });
+
+    </script>
+</body>
+</html>
